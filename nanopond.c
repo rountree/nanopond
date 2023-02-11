@@ -253,9 +253,11 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdlib.h> // exit(3)
 #include <string.h>
 #include <time.h>
+//#include <unistd.h> // getopt_long(3)
+#include <getopt.h> // getopt_long(3)
 
 #ifdef USE_PTHREADS_COUNT
 #include <pthread.h>
@@ -264,6 +266,83 @@
 #ifdef USE_SDL
 #include <SDL.h>
 #endif /* USE_SDL */
+
+
+static void
+option_help(){
+    printf("\n");
+    printf("Welcome to nanopond!\n");
+    printf("This version of nanopond is a reimagining based on Adam\n");
+    printf("Ierymenko's original program.\n");
+    printf("Copyright 2007-2017 Adam Ierymenko <adam.ierymenko@gmail.com>\n");
+    printf("git@github.com:adamierymenko/nanopond.git\n");
+    printf("Copyright 2023 Lawrence Livermore National Laboratory\n");
+    printf("git@github.com:rountree/nanopond.git\n");
+    printf("\n");
+    printf("Command-line options:\n");
+    printf("    -h  --help          Displays this text and exits.\n");
+    printf("    -v  --version       Display the version and exits.\n");
+    printf("\n");
+    exit(0);
+
+}
+
+static void
+option_version(){
+    fprintf(stdout, "v3.0-pre0\n");
+    exit(0);
+}
+
+static void
+option_unknown(){
+
+    fprintf(stderr,"%s::%d Unknown option.  Use -h to get a list of "
+            "available options.\n");
+    exit(-1);
+}
+
+static void
+option_missing(){
+
+    fprintf(stderr,"%s::%d Placeholder for handling a required argument to a "
+            "parameter.\n  No parameters require arguments yet, so you really"
+            "shouldn't be seeing this.\n");
+    exit(-1);
+}
+
+static void
+parse_options( int *argc, char ***argv ){
+
+    int c;
+    static const char *short_options = "hv";
+    static struct option long_options[] = {
+        {"help",    no_argument,    0, 'h'},
+        {"version", no_argument,    0, 'v'},
+        {0,         0,              0, 0}
+    };
+
+    while(1){
+        c = getopt_long( *argc, *argv, short_options, long_options, NULL);
+        if( -1 == c ){
+            break;
+        }
+        switch( c ){
+            case 'h':   option_help();      break;
+            case 'v':   option_version();   break;
+            case '?':   option_unknown();   break;
+            case ':':   option_missing();   break;
+            default:{
+                        fprintf(stderr, "%s::%d "
+                                "getopt_long(3) returned character code %#x\n",
+                                "That should not have happened.  Bye!\n",
+                                __FILE__, __LINE__, c);
+                        exit(-1);
+                        break;
+                    }
+        }
+
+    }
+}
 
 volatile uint64_t prngState[2];
 static inline uintptr_t getRandom()
@@ -928,6 +1007,8 @@ static void *run(void *targ)
 int main(int argc,char **argv)
 {
 	uintptr_t i,x,y;
+
+    parse_options( &argc, &argv );
 
 	/* Seed and init the random number generator */
 	prngState[0] = (uint64_t)time(NULL);
