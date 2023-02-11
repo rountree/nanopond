@@ -1,5 +1,9 @@
-.DS_Store
-@*
-Thumbs.db
-*.o
-nanopond
+3rd_party
+attic
+np
+np-t
+np-x
+np-xt
+*.tmux
+.*.sw?
+
