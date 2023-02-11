@@ -270,11 +270,7 @@
 #endif
 
 #ifdef USE_SDL
-#ifdef _MSC_VER
 #include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif /* _MSC_VER */
 #endif /* USE_SDL */
 
 volatile uint64_t prngState[2];
