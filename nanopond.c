@@ -253,11 +253,12 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h> // exit(3)
+#include <stdlib.h>     // exit(3), strtol(3)
 #include <string.h>
 #include <time.h>
-//#include <unistd.h> // getopt_long(3)
-#include <getopt.h> // getopt_long(3)
+#include <unistd.h>     // optarg
+#include <getopt.h>     // getopt_long(3)
+#include <stdbool.h>    // true, false, bool
 
 #ifdef USE_PTHREADS_COUNT
 #include <pthread.h>
@@ -267,6 +268,14 @@
 #include <SDL.h>
 #endif /* USE_SDL */
 
+static struct np_options{
+    bool use_seed;
+    unsigned int seed;
+}np_option;
+
+static void init_options(){
+    np_option.use_seed = false;
+}
 
 static void
 option_help(){
@@ -280,6 +289,8 @@ option_help(){
     printf("git@github.com:rountree/nanopond.git\n");
     printf("\n");
     printf("Command-line options:\n");
+    printf("    -s  --seed          Set random number seed.  Must be\n"
+           "                          between 0 and 65535, inclusive.\n");
     printf("    -h  --help          Displays this text and exits.\n");
     printf("    -v  --version       Display the version and exits.\n");
     printf("\n");
@@ -310,14 +321,33 @@ option_missing(){
 }
 
 static void
+option_seed(){
+    char *endptr;
+    np_option.use_seed = true;
+    np_option.seed = (unsigned int)strtol( optarg, &endptr, 10);
+
+    // Check to make sure entire string was consumed.
+    if( '\0' != *endptr || '\0' == *optarg ){
+        fprintf( stderr, "Invalid random number seed:  '%s'.\n"
+                "The seed should be a base-10 integer between 0 and 65535\n"
+                "(or something that strtol(3) will coerce into that range).\n",
+                optarg);
+        fprintf( stderr, "*endptr = %c (%#x)\n", *endptr, *endptr );
+        fprintf( stderr, "*optarg = %c (%#x)\n", *optarg, *optarg );
+        exit(-1);
+    }
+}
+
+static void
 parse_options( int *argc, char ***argv ){
 
     int c;
-    static const char *short_options = "hv";
+    static const char *short_options = "hs:v";
     static struct option long_options[] = {
-        {"help",    no_argument,    0, 'h'},
-        {"version", no_argument,    0, 'v'},
-        {0,         0,              0, 0}
+        {"help",    no_argument,        0, 'h'},
+        {"seed",    required_argument,  0, 's'},
+        {"version", no_argument,        0, 'v'},
+        {0,         0,                  0, 0}
     };
 
     while(1){
@@ -327,6 +357,7 @@ parse_options( int *argc, char ***argv ){
         }
         switch( c ){
             case 'h':   option_help();      break;
+            case 's':   option_seed();      break;
             case 'v':   option_version();   break;
             case '?':   option_unknown();   break;
             case ':':   option_missing();   break;
@@ -1010,12 +1041,19 @@ int main(int argc,char **argv)
 {
 	uintptr_t i,x,y;
 
+    init_options();
     parse_options( &argc, &argv );
 
 	/* Seed and init the random number generator */
-	prngState[0] = (uint64_t)time(NULL);
-	srand(time(NULL));
-	prngState[1] = (uint64_t)rand();
+    if( np_option.use_seed ){
+        srand( np_option.seed );
+        prngState[0] = (uint64_t)rand();
+        prngState[1] = (uint64_t)rand();
+    }else{
+        prngState[0] = (uint64_t)time(NULL);
+        srand(time(NULL));
+        prngState[1] = (uint64_t)rand();
+    }
 
 	/* Reset per-report stat counters */
 	for(x=0;x<sizeof(statCounters);++x)
