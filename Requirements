@@ -1,0 +1,34 @@
+tl;dr
+
+cmake >= 3.20.2
+gcc   >= 6.1.0
+
+
+cmake
+    SDL uses cmake and may well be able to tolerate older versions in a
+    stand-alone build.  Nanopond uses the --prefix and -j options for
+    --install and --build, respectively, and the former needs a more
+    recent version.
+
+    Versions known to work.
+    3.23.1
+    3.22.4
+    3.21.1
+    3.20.2
+
+    Versions known NOT to work:
+    3.18.0
+    3.16.8
+
+gcc
+    SDL assumes -std=c99, which requires 5.5+.
+
+    Versions known to work
+    10.2.1 20200804 (Red Hat 10.2.1-2)
+    9.3.1 20200408 (Red Hat 9.3.1-2)
+    8.3.1 20190311 (Red Hat 8.3.1-3)
+    7.3.0
+    6.1.0
+
+    Versions known NOT to work
+    4.9.3
