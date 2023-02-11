@@ -46,7 +46,16 @@ np-xt: sdl-install nanopond.c
 		$(CFLAGS) -o np-xt nanopond.c $(SDL_LIB) -lpthread
 
 np-clean:
-	rm -rf *.o np np-t np-x np-xt np-dbg *.dSYM
+	rm -rf *.o np np-t np-x np-xt np-dbg np.13.test *.dSYM
+
+# re-run after changing the underlying algorithm
+np-gold: np
+	./np -s 13 | head -n 100 > np.13.gold
+
+# re-run prior to any commit.
+np-test:
+	./np -s 13 | head -n 100 > np.13.test
+	diff -u np.13.gold np.13.test
 
 # sdl targets
 sdl-init:
