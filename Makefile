@@ -6,23 +6,28 @@ SDL_LIB=`./SDL/install/bin/sdl2-config --libs`
 # Only useful in np-t and np-xt targets
 NUM_THREADS=32
 
-# This should build everything.
+CFLAGS=-Ofast -Wall -Wextra -Werror -g
+
+# Use this to build everything.
 all: sdl-init sdl-install np-all
 
-# nanopond targets
+# nanopond targets:  x=Use SDL for GUI, t=multithreaded using pthreads
 np-all: np np-x np-t np-xt
 
-np:
-	gcc -Ofast -o np nanopond.c
+np: nanopond.c
+	gcc $(CFLAGS) -o np nanopond.c
 
-np-x:
-	gcc -DUSE_SDL $(SDL_CFLAGS) -Ofast -o np-x nanopond.c $(SDL_LIB)
+np-x: nanopond.c
+	gcc -DUSE_SDL $(SDL_CFLAGS) \
+		$(CFLAGS) -o np-x nanopond.c $(SDL_LIB)
 
-np-t:
-	gcc -DUSE_PTHREAD_COUNT=$(NUM_THREADS) -Ofast -o np-t nanopond.c -lpthread
+np-t: nanopond.c
+	gcc -DUSE_PTHREAD_COUNT=$(NUM_THREADS) \
+		$(CFLAGS) -o np-t nanopond.c -lpthread
 
-np-xt:
-	gcc -DUSE_SDL -DUSE_PTHREAD_COUNT=$(NUM_THREADS) $(SDL_CFLAGS) -Ofast -o np-xt nanopond.c $(SDL_LIB) -lpthread
+np-xt: nanopond.c
+	gcc -DUSE_SDL -DUSE_PTHREAD_COUNT=$(NUM_THREADS) $(SDL_CFLAGS) \
+		$(CFLAGS) -o np-xt nanopond.c $(SDL_LIB) -lpthread
 
 
 # sdl targets
