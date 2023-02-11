@@ -296,8 +296,7 @@ option_version(){
 static void
 option_unknown(){
 
-    fprintf(stderr,"%s::%d Unknown option.  Use -h to get a list of "
-            "available options.\n");
+    fprintf(stderr,"Unknown option.  Use -h to list available options.\n");
     exit(-1);
 }
 
@@ -306,7 +305,7 @@ option_missing(){
 
     fprintf(stderr,"%s::%d Placeholder for handling a required argument to a "
             "parameter.\n  No parameters require arguments yet, so you really"
-            "shouldn't be seeing this.\n");
+            "shouldn't be seeing this.\n", __FILE__, __LINE__);
     exit(-1);
 }
 
@@ -333,7 +332,7 @@ parse_options( int *argc, char ***argv ){
             case ':':   option_missing();   break;
             default:{
                         fprintf(stderr, "%s::%d "
-                                "getopt_long(3) returned character code %#x\n",
+                                "getopt_long(3) returned character code %#x\n"
                                 "That should not have happened.  Bye!\n",
                                 __FILE__, __LINE__, c);
                         exit(-1);
@@ -417,8 +416,10 @@ static struct Cell pond[POND_SIZE_X][POND_SIZE_Y];
 static volatile uint64_t cellIdCounter = 0;
 
 /* Currently selected color scheme */
+#ifdef USE_SDL
 enum { KINSHIP,LINEAGE,MAX_COLOR_SCHEME } colorScheme = KINSHIP;
 static const char *colorSchemeName[2] = { "KINSHIP", "LINEAGE" };
+#endif
 
 #ifdef USE_SDL
 static SDL_Window *window;
@@ -472,7 +473,7 @@ static void doReport(const uint64_t clock)
 	/* Look here to get the columns in the CSV output */
 	
 	/* The first five are here and are self-explanatory */
-	printf("%llu,%llu,%llu,%llu,%llu,%llu,%llu,%llu",
+	printf("%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
 		(uint64_t)clock,
 		(uint64_t)totalEnergy,
 		(uint64_t)totalActiveCells,
@@ -506,7 +507,7 @@ static void doReport(const uint64_t clock)
 	for(x=0;x<sizeof(statCounters);++x)
 		((uint8_t *)&statCounters)[x] = (uint8_t)0;
 }
-
+#ifdef USE_SDL
 /**
  * Dumps the genome of a cell to a file.
  *
@@ -544,11 +545,11 @@ static void dumpCell(FILE *file, struct Cell *cell)
 	}
 	fprintf(file,"\n");
 }
-
+#endif //USE_SDL
 static inline struct Cell *getNeighbor(const uintptr_t x,const uintptr_t y,const uintptr_t dir)
 {
 	/* Space is toroidal; it wraps at edges */
-	switch(dir) {
+	switch(dir){
 		case N_LEFT:
 			return (x) ? &pond[x-1][y] : &pond[POND_SIZE_X-1][y];
 		case N_RIGHT:
@@ -569,6 +570,7 @@ static inline int accessAllowed(struct Cell *const c2,const uintptr_t c1guess,in
 	return sense ? (((getRandom() & 0xf) >= BITS_IN_FOURBIT_WORD[(c2->genome[0] & 0xf) ^ (c1guess & 0xf)])||(!c2->parentID)) : (((getRandom() & 0xf) <= BITS_IN_FOURBIT_WORD[(c2->genome[0] & 0xf) ^ (c1guess & 0xf)])||(!c2->parentID));
 }
 
+#ifdef USE_SDL
 static inline uint8_t getColor(struct Cell *c)
 {
 	uintptr_t i,j,word,sum,opcode,skipnext;
@@ -624,7 +626,7 @@ static inline uint8_t getColor(struct Cell *c)
 	}
 	return 0; /* Cells with no energy are black */
 }
-
+#endif //USE_SDL
 volatile int exitNow = 0;
 
 static void *run(void *targ)
