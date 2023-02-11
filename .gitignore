@@ -7,4 +7,5 @@ np-xt
 np-dbg
 *.tmux
 .*.sw?
+np.13.test
 
