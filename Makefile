@@ -1,9 +1,7 @@
-# Building the SDL library with -j requires cmake@3.12+
+# See Requirements for recommended tool versions.
 
-# Building SDL outside of the git repo makes for a less noisy "git status"
+# Building/installing  SDL out-of-tree makes for a less noisy "git status"
 SDL_BUILD=$(PWD)/3rd_party/SDL/build
-
-# Install the SDL libraries and includes here
 SDL_INSTALL=$(PWD)/3rd_party/SDL
 
 # Location of the sdl2-config program that tells other targets
@@ -18,17 +16,22 @@ SDL_LIB=`$(SDL_CONFIG) --libs`
 # Only useful in np-t and np-xt targets
 NUM_THREADS=32
 
-CFLAGS=-Ofast -Wall -Wextra -Werror -g
+CFLAGS=-Ofast -Wall -Wextra -Werror -g -std=c2x
+CDEBUG_FLAGS=-Og -Wall -Wextra -Werror -g \
+			 -std=c2x -fsanitize=address -fsanitize=leak
 
 # Use this to build everything.
 all: np-all
 clean: np-clean sdl-clean
 
 # nanopond targets:  x=Use SDL for GUI, t=multithreaded using pthreads
-np-all: np np-x np-t np-xt
+np-all: np np-x np-t np-xt np-dbg
 
 np: nanopond.c
 	gcc $(CFLAGS) -o np nanopond.c
+
+np-dbg: nanopond.c
+	gcc $(CDEBUG_FLAGS) -o np-dbg nanopond.c
 
 np-x: sdl-install nanopond.c
 	gcc -DUSE_SDL $(SDL_CFLAGS) \
@@ -43,7 +46,7 @@ np-xt: sdl-install nanopond.c
 		$(CFLAGS) -o np-xt nanopond.c $(SDL_LIB) -lpthread
 
 np-clean:
-	rm -rf *.o np np-t np-x np-xt *.dSYM
+	rm -rf *.o np np-t np-x np-xt np-dbg *.dSYM
 
 # sdl targets
 sdl-init:
