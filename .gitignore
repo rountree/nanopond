@@ -4,6 +4,7 @@ np
 np-t
 np-x
 np-xt
+np-dbg
 *.tmux
 .*.sw?
 
