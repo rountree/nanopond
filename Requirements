@@ -1,7 +1,7 @@
 tl;dr
 
 cmake >= 3.20.2
-gcc   >= 6.1.0
+gcc   >= 9.3.0
 
 
 cmake
@@ -22,13 +22,11 @@ cmake
 
 gcc
     SDL assumes -std=c99, which requires 5.5+.
+    I'm forcing nanopond to use -std=c2x.
 
     Versions known to work
-    10.2.1 20200804 (Red Hat 10.2.1-2)
-    9.3.1 20200408 (Red Hat 9.3.1-2)
-    8.3.1 20190311 (Red Hat 8.3.1-3)
-    7.3.0
-    6.1.0
+    12.2.0
+     9.3.0
 
     Versions known NOT to work
     4.9.3
