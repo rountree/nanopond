@@ -249,14 +249,6 @@
  * fail. Higher numbers mean lower penalties. */
 #define FAILED_KILL_PENALTY 3
 
-/* Define this to use SDL. To use SDL, you must have SDL headers
- * available and you must link with the SDL library when you compile. */
-/* Comment this out to compile without SDL visualization support. */
-#define USE_SDL 1
-
-/* Define this to use threads, and how many threads to create */
-#define USE_PTHREADS_COUNT 4
-
 /* ----------------------------------------------------------------------- */
 
 #include <stdint.h>
