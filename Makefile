@@ -53,7 +53,7 @@ np-gold: np
 	./np -s 13 | head -n 100 > np.13.gold
 
 # re-run prior to any commit.
-np-test:
+np-test: np
 	./np -s 13 | head -n 100 > np.13.test
 	diff -u np.13.gold np.13.test
 
