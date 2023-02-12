@@ -1,7 +1,7 @@
 tl;dr
 
 cmake >= 3.20.2
-gcc   >= 9.3.0
+gcc   >= 12.0.0
 
 
 cmake
@@ -21,12 +21,9 @@ cmake
     3.16.8
 
 gcc
-    SDL assumes -std=c99, which requires 5.5+.
-    I'm forcing nanopond to use -std=c2x.
+    Nanopond requires support of digit separators, which came in with
+    gcc 12 and -std=c2x
 
     Versions known to work
     12.2.0
-     9.3.0
 
-    Versions known NOT to work
-    4.9.3

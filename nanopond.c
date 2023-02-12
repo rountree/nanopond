@@ -216,44 +216,44 @@
  * info while slowing down the simulation. Higher values will give less
  * frequent updates. */
 /* This is also the frequency of screen refreshes if SDL is enabled. */
-#define REPORT_FREQUENCY 200000
+//#define REPORT_FREQUENCY 200000 replaced with np_option.report_frequency
 
 /* Mutation rate -- range is from 0 (none) to 0xffffffff (all mutations!) */
 /* To get it from a float probability from 0.0 to 1.0, multiply it by
  * 4294967295 (0xffffffff) and round. */
-#define MUTATION_RATE 5000
+//#define MUTATION_RATE 5000 // replaced by np_option.mutation_rate
 
 /* How frequently should random cells / energy be introduced?
  * Making this too high makes things very chaotic. Making it too low
  * might not introduce enough energy. */
-#define INFLOW_FREQUENCY 100
+// #define INFLOW_FREQUENCY 100 // replaced by np_option.inflow_frequency
 
 /* Base amount of energy to introduce per INFLOW_FREQUENCY ticks */
-#define INFLOW_RATE_BASE 600
+//#define INFLOW_RATE_BASE 600 // replaced by np_option.inflow_minimum
 
 /* A random amount of energy between 0 and this is added to
  * INFLOW_RATE_BASE when energy is introduced. Comment this out for
  * no variation in inflow rate. */
-#define INFLOW_RATE_VARIATION 1000
+//#define INFLOW_RATE_VARIATION 1000 // replaced by np_option.inflow_maximum
 
 /* Size of pond in X and Y dimensions. */
-#define POND_SIZE_X 800
-#define POND_SIZE_Y 600
+//#define POND_SIZE_X 800 // replaced by np_option.pond_xdim
+//#define POND_SIZE_Y 600 // replaced by np_option.pond_ydim
 
 /* Depth of pond in four-bit codons -- this is the maximum
  * genome size. This *must* be a multiple of 16! */
-#define POND_DEPTH 1024
+// #define POND_DEPTH 1024 // replaced with np_option.genome_length
 
 /* This is the divisor that determines how much energy is taken
  * from cells when they try to KILL a viable cell neighbor and
  * fail. Higher numbers mean lower penalties. */
-#define FAILED_KILL_PENALTY 3
+//#define FAILED_KILL_PENALTY 3 replaced with np_option.kill_fail_penalty
 
 /* ----------------------------------------------------------------------- */
 
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>     // exit(3), strtol(3)
+#include <stdlib.h>     // exit(3), strtol(3), calloc(3)
 #include <string.h>
 #include <time.h>
 #include <unistd.h>     // optarg
@@ -268,20 +268,47 @@
 #include <SDL.h>
 #endif /* USE_SDL */
 
+/* Pond depth in machine-size words.  This is calculated from
+ * np_option.genome_length and the size of the machine word. (The multiplication
+ * by two is due to the fact that there are two four-bit values in
+ * each eight-bit byte.) */
+#define PONDDEPTH_SYSWORDS (np_option.genome_length / (sizeof(uintptr_t) * 2))
+
+
+
 static struct np_options{
-    bool use_seed;
-    unsigned int seed;
+    uint16_t inflow_frequency;      // -a   --inflow-frequency
+    uint16_t inflow_minimum;        // -b   --inflow-minimum
+    uint16_t inflow_maximum;        // -c   --inflow-maximum
+    uint16_t genome_length;         // -g   --genome-length
+    uint16_t kill_fail_penalty;     // -k   --kill-fail-penalty
+    uint32_t mutation_rate;         // -m   --mutation-rate
+    uint32_t report_frequency;      // -r   --report-frequency
+    uint64_t seed;                  // -s   --seed
+    uint32_t update_frequency;      // -u   --update-frequency
+    uint16_t pond_xdim;             // -x   --pond-length
+    uint16_t pond_ydim;             // -y   --pond-breadth
 }np_option;
 
 static void init_options(){
-    np_option.use_seed = false;
+    np_option.inflow_frequency =     100;
+    np_option.inflow_minimum   =     600;
+    np_option.inflow_maximum   =   1'600;
+    np_option.genome_length    =   1'024;
+    np_option.kill_fail_penalty=       3;
+    np_option.mutation_rate    =   5'000;
+    np_option.report_frequency = 200'000;
+    np_option.seed             =       0;
+    np_option.update_frequency = 200'000;
+    np_option.pond_xdim        =     800;
+    np_option.pond_ydim        =     600;
 }
 
 static void
 option_help(){
     printf("\n");
     printf("Welcome to nanopond!\n");
-    printf("This version of nanopond is a reimagining based on Adam\n");
+    printf("This version of nanopond is a reimagining of Adam\n");
     printf("Ierymenko's original program.\n");
     printf("Copyright 2007-2017 Adam Ierymenko <adam.ierymenko@gmail.com>\n");
     printf("git@github.com:adamierymenko/nanopond.git\n");
@@ -289,10 +316,54 @@ option_help(){
     printf("git@github.com:rountree/nanopond.git\n");
     printf("\n");
     printf("Command-line options:\n");
-    printf("    -s  --seed          Set random number seed.  Must be\n"
-           "                          between 0 and 65535, inclusive.\n");
-    printf("    -h  --help          Displays this text and exits.\n");
-    printf("    -v  --version       Display the version and exits.\n");
+    printf("\n");
+    printf("    -a  --inflow-frequency  Number of ticks between the\n"
+           "                              introduction of random cells/\n"
+           "                              energy.  Default is 100.\n"
+           "                              (uint16_t)\n");
+    printf("    -b  --inflow-minimum    Minimum amount of energy introduced\n"
+           "                              at each --inflow-frequency tick.\n"
+           "                              Default is 600.  (uint16_t)\n");
+// FIXME The original algorithm puts the energy amount betweeen
+//       INFLOW_RATE_BASE and (INFLOW_RATE_BASE + INFLOW_RATE_VARIATION).
+//       Can express this idea much easier with INFLOW_MIN and INFLOW_MAX,
+//       but this will require changes to the code.  See issue #39.
+    printf("    -c  --inflow-maximum    Maximum amount of energy introduced\n"
+           "                              at each --inflow-frequency tick.\n"
+           "                              Default is 1600.  (uint16_t)\n\n");
+    printf("    -g  --genome-length     Maximum genome size in 4-bit codons.\n"
+           "                              must be a multiple of 16.  Default is\n"
+           "                              1024.  (uint16_t)\n\n");
+    printf("    -h  --help              Displays this text and exits.\n\n");
+    printf("    -k  --kill-fail-penalty Divisor that determines how much\n"
+           "                              energy is taken from a cell after\n"
+           "                              executing a failed KILL instruction\n"
+           "                              Higher numbers result in lower\n"
+           "                              penalties.  Default is 3.\n"
+           "                              (uint8_t)\n\n");
+    printf("    -m  --mutation-rate     Probability of mutation, expressed\n"
+           "                              as a decimal integer between 0 and\n"
+           "                              4'294'967'295 (aka 0x0'ffff'ffff).\n"
+           "                              Default is 5'000, which works out\n"
+           "                              to roughly 0.00012%% chance per\n"
+           "                              opportunity.  (uint32_t)\n\n");
+    printf("    -r  --report-frequency  Frequency of both printing\n"
+           "                              comprehensive reports and the SDL\n"
+           "                              screen update rate.  Default is\n"
+           "                              200'000.  (uint32_t)\n\n");
+    printf("    -s  --seed              Set random number seed.  Must be\n"
+           "                              between 0 and 65535, inclusive.\n"
+           "                              Default is 0, which uses time(2).\n"
+           "                              (uint64_t)\n\n");
+    printf("    -u  --update-frequency  Rate in clock ticks for how often\n"
+           "                              the SDL window should be updated\n"
+           "                              with the current state of the pond\n"
+           "                              Default is 200'000.  (uint32_t)\n\n");
+    printf("    -v  --version           Display the version and exit.\n\n");
+    printf("    -x  --pond-xdim         Length of the pond in cells.  Default\n"
+           "                              is 800.  (uint16_t)\n\n");
+    printf("    -y  --pond-ydim         Breadth of the pond in cells.  \n"
+           "                              Default is 600.  (uint16_t)\n\n");
     printf("\n");
     exit(0);
 
@@ -321,19 +392,43 @@ option_missing(){
 }
 
 static void
-option_seed(){
+optarg2option( void *p, bool *b, uint8_t nbits ){
     char *endptr;
-    np_option.use_seed = true;
-    np_option.seed = (unsigned int)strtol( optarg, &endptr, 10);
+    // Sanity checking
+    if( NULL == optarg ){
+        fprintf( stderr, "%s::%d %s wanted to parse optarg, but it's NULL.\n",
+                __FILE__, __LINE__, __func__);
+        exit(-1);
+    }
+    if( NULL == p ){
+        fprintf( stderr, "%s::%d %s asked to dereference NULL pointer p.\n",
+                __FILE__, __LINE__, __func__);
+        exit(-1);
+    }
 
-    // Check to make sure entire string was consumed.
-    if( '\0' != *endptr || '\0' == *optarg ){
-        fprintf( stderr, "Invalid random number seed:  '%s'.\n"
-                "The seed should be a base-10 integer between 0 and 65535\n"
-                "(or something that strtol(3) will coerce into that range).\n",
-                optarg);
-        fprintf( stderr, "*endptr = %c (%#x)\n", *endptr, *endptr );
-        fprintf( stderr, "*optarg = %c (%#x)\n", *optarg, *optarg );
+    // FIXME
+    // I think the only thing using this is --seed.  Can do better.
+    if( NULL != b ){
+        *b = true;
+    }
+    switch(nbits){
+        case  8: *((uint8_t* )p)=(uint8_t )strtol(optarg, &endptr, 10); break;
+        case 16: *((uint16_t*)p)=(uint16_t)strtol(optarg, &endptr, 10); break;
+        case 32: *((uint32_t*)p)=(uint32_t)strtol(optarg, &endptr, 10); break;
+        case 64: *((uint64_t*)p)=(uint64_t)strtol(optarg, &endptr, 10); break;
+        default:
+                 fprintf( stderr, "%s::%d nbits must be 8, 16, 32 or 64.\n"
+                                  "They are %u instead.\n",
+                                  __FILE__, __LINE__, nbits);
+                 exit(-1);
+    }
+    // FIXME Would be nice to add which option we're talking about.
+    if( '\0' != *endptr ){
+        fprintf( stderr, "Malformed option parameter '%s'.\n", optarg );
+        exit(-1);
+    }
+    if( '\0' == *optarg ){
+        fprintf( stderr, "Option parameter is an empty string.\n" );
         exit(-1);
     }
 }
@@ -342,12 +437,22 @@ static void
 parse_options( int *argc, char ***argv ){
 
     int c;
-    static const char *short_options = "hs:v";
+    static const char *short_options = "a:b:c:g:hk:m:r:s:u:v:x:y:";
     static struct option long_options[] = {
-        {"help",    no_argument,        0, 'h'},
-        {"seed",    required_argument,  0, 's'},
-        {"version", no_argument,        0, 'v'},
-        {0,         0,                  0, 0}
+        {"inflow-frequency",    required_argument,  0, 'a'},
+        {"inflow-minimum",      required_argument,  0, 'b'},
+        {"inflow-maximum",      required_argument,  0, 'c'},
+        {"genome-length",       required_argument,  0, 'g'},
+        {"help",                no_argument,        0, 'h'},
+        {"kill-fail-penalty",   required_argument,  0, 'k'},
+        {"mutation-rate",       required_argument,  0, 'm'},
+        {"report-frequency",    required_argument,  0, 'r'},
+        {"seed",                required_argument,  0, 's'},
+        {"update-frequency",    required_argument,  0, 'u'},
+        {"version",             no_argument,        0, 'v'},
+        {"pond-xdim",           required_argument,  0, 'x'},
+        {"pond-ydim",           required_argument,  0, 'y'},
+        {0,                     0,                  0,  0 }
     };
 
     while(1){
@@ -356,9 +461,19 @@ parse_options( int *argc, char ***argv ){
             break;
         }
         switch( c ){
+            case 'a':   optarg2option( &(np_option.inflow_frequency), NULL, 16 ); break;
+            case 'b':   optarg2option( &(np_option.inflow_minimum),   NULL, 16 ); break;
+            case 'c':   optarg2option( &(np_option.inflow_maximum),   NULL, 16 ); break;
+            case 'g':   optarg2option( &(np_option.genome_length),    NULL, 16 ); break;
             case 'h':   option_help();      break;
-            case 's':   option_seed();      break;
+            case 'k':   optarg2option( &(np_option.kill_fail_penalty),NULL, 16 ); break;
+            case 'm':   optarg2option( &(np_option.mutation_rate),    NULL, 32 ); break;
+            case 'r':   optarg2option( &(np_option.report_frequency), NULL, 32 ); break;
+            case 's':   optarg2option( &(np_option.seed),             NULL, 64 ); break;
+            case 'u':   optarg2option( &(np_option.update_frequency), NULL, 32 ); break;
             case 'v':   option_version();   break;
+            case 'x':   optarg2option( &(np_option.pond_xdim),        NULL, 16 ); break;
+            case 'y':   optarg2option( &(np_option.pond_ydim),        NULL, 16 ); break;
             case '?':   option_unknown();   break;
             case ':':   option_missing();   break;
             default:{
@@ -373,43 +488,6 @@ parse_options( int *argc, char ***argv ){
 
     }
 }
-
-volatile uint64_t prngState[2];
-static inline uintptr_t getRandom()
-{
-	// https://en.wikipedia.org/wiki/Xorshift#xorshift.2B
-	uint64_t x = prngState[0];
-	const uint64_t y = prngState[1];
-	prngState[0] = y;
-	x ^= x << 23;
-	const uint64_t z = x ^ y ^ (x >> 17) ^ (y >> 26);
-	prngState[1] = z;
-	return (uintptr_t)(z + y);
-}
-
-/* Pond depth in machine-size words.  This is calculated from
- * POND_DEPTH and the size of the machine word. (The multiplication
- * by two is due to the fact that there are two four-bit values in
- * each eight-bit byte.) */
-#define POND_DEPTH_SYSWORDS (POND_DEPTH / (sizeof(uintptr_t) * 2))
-
-/* Number of bits in a machine-size word */
-#define SYSWORD_BITS (sizeof(uintptr_t) * 8)
-
-/* Constants representing neighbors in the 2D grid. */
-#define N_LEFT 0
-#define N_RIGHT 1
-#define N_UP 2
-#define N_DOWN 3
-
-/* Word and bit at which to start execution */
-/* This is after the "logo" */
-#define EXEC_START_WORD 0
-#define EXEC_START_BIT 4
-
-/* Number of bits set in binary numbers 0000 through 1111 */
-static const uintptr_t BITS_IN_FOURBIT_WORD[16] = { 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4 };
-
 /**
  * Structure for a cell in the pond
  */
@@ -433,7 +511,7 @@ struct Cell
 
 	/* Memory space for cell genome (genome is stored as four
 	 * bit instructions packed into machine size words) */
-	uintptr_t genome[POND_DEPTH_SYSWORDS];
+	uintptr_t *genome;
 
 #ifdef USE_PTHREADS_COUNT
 	pthread_mutex_t lock;
@@ -441,7 +519,72 @@ struct Cell
 };
 
 /* The pond is a 2D array of cells */
-static struct Cell pond[POND_SIZE_X][POND_SIZE_Y];
+static struct Cell **pond;
+
+
+static void
+allocate_pond(){
+    pond = calloc( np_option.pond_xdim, sizeof(struct Cell*) );
+    if( NULL == pond ){
+        fprintf( stderr, "%s:%d %s call to calloc(3) failed.\n",
+                __FILE__, __LINE__, __func__);
+        exit(-1);
+    }
+    for( size_t x=0; x<np_option.pond_xdim; x++ ){
+        pond[x] = calloc( np_option.pond_ydim, sizeof(struct Cell) );
+        if( NULL == pond[x] ){
+            fprintf( stderr, "%s:%d %s call to calloc(3) failed.\n",
+                    __FILE__, __LINE__, __func__);
+            exit(-1);
+        }
+        for( size_t y=0; y<np_option.pond_ydim; y++){
+            pond[x][y].genome = calloc( PONDDEPTH_SYSWORDS, sizeof(uintptr_t) );
+        }
+    }
+}
+
+static void
+deallocate_pond(){
+    for( size_t x=0; x<np_option.pond_xdim; x++ ){
+        for( size_t y=0; y<np_option.pond_ydim; y++ ){
+            free( pond[x][y].genome );
+        }
+        free( pond[x] );
+    }
+    free( pond );
+}
+
+volatile uint64_t prngState[2];
+static inline uintptr_t getRandom()
+{
+	// https://en.wikipedia.org/wiki/Xorshift#xorshift.2B
+	uint64_t x = prngState[0];
+	const uint64_t y = prngState[1];
+	prngState[0] = y;
+	x ^= x << 23;
+	const uint64_t z = x ^ y ^ (x >> 17) ^ (y >> 26);
+	prngState[1] = z;
+	return (uintptr_t)(z + y);
+}
+
+
+/* Number of bits in a machine-size word */
+#define SYSWORD_BITS (sizeof(uintptr_t) * 8)
+
+/* Constants representing neighbors in the 2D grid. */
+#define N_LEFT 0
+#define N_RIGHT 1
+#define N_UP 2
+#define N_DOWN 3
+
+/* Word and bit at which to start execution */
+/* This is after the "logo" */
+#define EXEC_START_WORD 0
+#define EXEC_START_BIT 4
+
+/* Number of bits set in binary numbers 0000 through 1111 */
+static const uintptr_t BITS_IN_FOURBIT_WORD[16] = { 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4 };
+
 
 /* This is used to generate unique cell IDs */
 static volatile uint64_t cellIdCounter = 0;
@@ -487,8 +630,8 @@ static void doReport(const uint64_t clock)
 	uint64_t totalViableReplicators = 0;
 	uintptr_t maxGeneration = 0;
 
-	for(x=0;x<POND_SIZE_X;++x) {
-		for(y=0;y<POND_SIZE_Y;++y) {
+	for(x=0;x<np_option.pond_xdim;++x) {
+		for(y=0;y<np_option.pond_ydim;++y) {
 			struct Cell *const c = &pond[x][y];
 			if (c->energy) {
 				++totalActiveCells;
@@ -553,7 +696,7 @@ static void dumpCell(FILE *file, struct Cell *cell)
 		wordPtr = 0;
 		shiftPtr = 0;
 		stopCount = 0;
-		for(i=0;i<POND_DEPTH;++i) {
+		for(i=0;i<np_option.genome_length;++i) {
 			inst = (cell->genome[wordPtr] >> shiftPtr) & 0xf;
 			/* Four STOP instructions in a row is considered the end.
 			 * The probability of this being wrong is *very* small, and
@@ -567,7 +710,7 @@ static void dumpCell(FILE *file, struct Cell *cell)
 					break;
 			} else stopCount = 0;
 			if ((shiftPtr += 4) >= SYSWORD_BITS) {
-				if (++wordPtr >= POND_DEPTH_SYSWORDS) {
+				if (++wordPtr >= PONDDEPTH_SYSWORDS) {
 					wordPtr = EXEC_START_WORD;
 					shiftPtr = EXEC_START_BIT;
 				} else shiftPtr = 0;
@@ -582,13 +725,13 @@ static inline struct Cell *getNeighbor(const uintptr_t x,const uintptr_t y,const
 	/* Space is toroidal; it wraps at edges */
 	switch(dir){
 		case N_LEFT:
-			return (x) ? &pond[x-1][y] : &pond[POND_SIZE_X-1][y];
+			return (x) ? &pond[x-1][y] : &pond[np_option.pond_xdim-1][y];
 		case N_RIGHT:
-			return (x < (POND_SIZE_X-1)) ? &pond[x+1][y] : &pond[0][y];
+			return (x < (np_option.pond_xdim-1U)) ? &pond[x+1][y] : &pond[0][y];
 		case N_UP:
-			return (y) ? &pond[x][y-1] : &pond[x][POND_SIZE_Y-1];
+			return (y) ? &pond[x][y-1] : &pond[x][np_option.pond_ydim-1];
 		case N_DOWN:
-			return (y < (POND_SIZE_Y-1)) ? &pond[x][y+1] : &pond[x][0];
+			return (y < (np_option.pond_ydim-1U)) ? &pond[x][y+1] : &pond[x][0];
 	}
 	return &pond[x][y]; /* This should never be reached */
 }
@@ -622,7 +765,7 @@ static inline uint8_t getColor(struct Cell *c)
 				if (c->generation > 1) {
 					sum = 0;
 					skipnext = 0;
-					for(i=0;i<POND_DEPTH_SYSWORDS&&(c->genome[i] != ~((uintptr_t)0));++i) {
+					for(i=0;i<PONDDEPTH_SYSWORDS&&(c->genome[i] != ~((uintptr_t)0));++i) {
 						word = c->genome[i];
 						for(j=0;j<SYSWORD_BITS/4;++j,word >>= 4) {
 							/* We ignore 0xf's here, because otherwise very similar genomes
@@ -667,7 +810,7 @@ static void *run(void *targ)
 	uintptr_t clock = 0;
 
 	/* Buffer used for execution output of candidate offspring */
-	uintptr_t outputBuf[POND_DEPTH_SYSWORDS];
+	uintptr_t outputBuf[PONDDEPTH_SYSWORDS];
 
 	/* Miscellaneous variables used in the loop */
 	uintptr_t currentWord,wordPtr,shiftPtr,inst,tmp;
@@ -685,8 +828,8 @@ static void *run(void *targ)
 	uintptr_t facing;
 
 	/* Virtual machine loop/rep stack */
-	uintptr_t loopStack_wordPtr[POND_DEPTH];
-	uintptr_t loopStack_shiftPtr[POND_DEPTH];
+	uintptr_t loopStack_wordPtr[np_option.genome_length];
+	uintptr_t loopStack_shiftPtr[np_option.genome_length];
 	uintptr_t loopStackPtr;
 
 	/* If this is nonzero, we're skipping to matching REP */
@@ -708,10 +851,11 @@ static void *run(void *targ)
 		/* Increment clock and run reports periodically */
 		/* Clock is incremented at the start, so it starts at 1 */
 		++clock;
-		if ((threadNo == 0)&&(!(clock % REPORT_FREQUENCY))) {
+		if ((threadNo == 0)&&(!(clock % np_option.report_frequency))) {
 			doReport(clock);
-			/* SDL display is also refreshed every REPORT_FREQUENCY */
+        }
 #ifdef USE_SDL
+		if ((threadNo == 0)&&(!(clock % np_option.update_frequency))) {
 			while (SDL_PollEvent(&sdlEvent)) {
 				if (sdlEvent.type == SDL_QUIT) {
 					fprintf(stderr,"[QUIT] Quit signal received!\n");
@@ -725,8 +869,8 @@ static void *run(void *targ)
 						case SDL_BUTTON_RIGHT:
 							colorScheme = (colorScheme + 1) % MAX_COLOR_SCHEME;
 							fprintf(stderr,"[INTERFACE] Switching to color scheme \"%s\".\n",colorSchemeName[colorScheme]);
-							for (y=0;y<POND_SIZE_Y;++y) {
-								for (x=0;x<POND_SIZE_X;++x)
+							for (y=0;y<np_option.pond_ydim;++y) {
+								for (x=0;x<np_option.pond_xdim;++x)
 									((uint8_t *)screen->pixels)[x + (y * sdlPitch)] = getColor(&pond[x][y]);
 							}
 							break;
@@ -735,16 +879,16 @@ static void *run(void *targ)
 			}
 			SDL_BlitSurface(screen, NULL, winsurf, NULL);
 			SDL_UpdateWindowSurface(window);
-#endif /* USE_SDL */
 		}
+#endif /* USE_SDL */
 
 		/* Introduce a random cell somewhere with a given energy level */
 		/* This is called seeding, and introduces both energy and
-		 * entropy into the substrate. This happens every INFLOW_FREQUENCY
+		 * entropy into the substrate. This happens every inflow_frequency
 		 * clock ticks. */
-		if (!(clock % INFLOW_FREQUENCY)) {
-			x = getRandom() % POND_SIZE_X;
-			y = getRandom() % POND_SIZE_Y;
+		if (!(clock % np_option.inflow_frequency)) {
+			x = getRandom() % np_option.pond_xdim;
+			y = getRandom() % np_option.pond_ydim;
 			pptr = &pond[x][y];
 
 #ifdef USE_PTHREADS_COUNT
@@ -755,12 +899,8 @@ static void *run(void *targ)
 			pptr->parentID = 0;
 			pptr->lineage = cellIdCounter;
 			pptr->generation = 0;
-#ifdef INFLOW_RATE_VARIATION
-			pptr->energy += INFLOW_RATE_BASE + (getRandom() % INFLOW_RATE_VARIATION);
-#else
-			pptr->energy += INFLOW_RATE_BASE;
-#endif /* INFLOW_RATE_VARIATION */
-			for(i=0;i<POND_DEPTH_SYSWORDS;++i)
+			pptr->energy += np_option.inflow_minimum + (getRandom() % (np_option.inflow_maximum - np_option.inflow_minimum));
+			for(i=0;i<PONDDEPTH_SYSWORDS;++i)
 				pptr->genome[i] = getRandom();
 			++cellIdCounter;
 
@@ -776,12 +916,12 @@ static void *run(void *targ)
 
 		/* Pick a random cell to execute */
 		i = getRandom();
-		x = i % POND_SIZE_X;
-		y = ((i / POND_SIZE_X) >> 1) % POND_SIZE_Y;
+		x = i % np_option.pond_xdim;
+		y = ((i / np_option.pond_xdim) >> 1) % np_option.pond_ydim;
 		pptr = &pond[x][y];
 
 		/* Reset the state of the VM prior to execution */
-		for(i=0;i<POND_DEPTH_SYSWORDS;++i)
+		for(i=0;i<PONDDEPTH_SYSWORDS;++i)
 			outputBuf[i] = ~((uintptr_t)0); /* ~0 == 0xfffff... */
 		ptr_wordPtr = 0;
 		ptr_shiftPtr = 0;
@@ -810,12 +950,12 @@ static void *run(void *targ)
 			inst = (currentWord >> shiftPtr) & 0xf;
 
 			/* Randomly frob either the instruction or the register with a
-			 * probability defined by MUTATION_RATE. This introduces variation,
+			 * probability defined by np_option.mutation_rate. This introduces variation,
 			 * and since the variation is introduced into the state of the VM
 			 * it can have all manner of different effects on the end result of
 			 * replication: insertions, deletions, duplications of entire
 			 * ranges of the genome, etc. */
-			if ((getRandom() & 0xffffffff) < MUTATION_RATE) {
+			if ((getRandom() & 0xffffffff) < np_option.mutation_rate) {
 				tmp = getRandom(); /* Call getRandom() only once for speed */
 				if (tmp & 0x80) /* Check for the 8th bit to get random boolean */
 					inst = tmp & 0xf; /* Only the first four bits are used here */
@@ -847,7 +987,7 @@ static void *run(void *targ)
 						break;
 					case 0x1: /* FWD: Increment the pointer (wrap at end) */
 						if ((ptr_shiftPtr += 4) >= SYSWORD_BITS) {
-							if (++ptr_wordPtr >= POND_DEPTH_SYSWORDS)
+							if (++ptr_wordPtr >= PONDDEPTH_SYSWORDS)
 								ptr_wordPtr = 0;
 							ptr_shiftPtr = 0;
 						}
@@ -858,7 +998,7 @@ static void *run(void *targ)
 						else {
 							if (ptr_wordPtr)
 								--ptr_wordPtr;
-							else ptr_wordPtr = POND_DEPTH_SYSWORDS - 1;
+							else ptr_wordPtr = PONDDEPTH_SYSWORDS - 1;
 							ptr_shiftPtr = SYSWORD_BITS - 4;
 						}
 						break;
@@ -885,7 +1025,7 @@ static void *run(void *targ)
 						break;
 					case 0x9: /* LOOP: Jump forward to matching REP if register is zero */
 						if (reg) {
-							if (loopStackPtr >= POND_DEPTH)
+							if (loopStackPtr >= np_option.genome_length)
 								stop = 1; /* Stack overflow ends execution */
 							else {
 								loopStack_wordPtr[loopStackPtr] = wordPtr;
@@ -911,7 +1051,7 @@ static void *run(void *targ)
 						break;
 					case 0xc: /* XCHG: Skip next instruction and exchange value of register with it */
 						if ((shiftPtr += 4) >= SYSWORD_BITS) {
-							if (++wordPtr >= POND_DEPTH_SYSWORDS) {
+							if (++wordPtr >= PONDDEPTH_SYSWORDS) {
 								wordPtr = EXEC_START_WORD;
 								shiftPtr = EXEC_START_BIT;
 							} else shiftPtr = 0;
@@ -937,7 +1077,7 @@ static void *run(void *targ)
 							tmpptr->generation = 0;
 							++cellIdCounter;
 						} else if (tmpptr->generation > 2) {
-							tmp = pptr->energy / FAILED_KILL_PENALTY;
+							tmp = pptr->energy / np_option.kill_fail_penalty;
 							if (pptr->energy > tmp)
 								pptr->energy -= tmp;
 							else pptr->energy = 0;
@@ -968,7 +1108,7 @@ static void *run(void *targ)
 			/* Advance the shift and word pointers, and loop around
 			 * to the beginning at the end of the genome. */
 			if ((shiftPtr += 4) >= SYSWORD_BITS) {
-				if (++wordPtr >= POND_DEPTH_SYSWORDS) {
+				if (++wordPtr >= PONDDEPTH_SYSWORDS) {
 					wordPtr = EXEC_START_WORD;
 					shiftPtr = EXEC_START_BIT;
 				} else shiftPtr = 0;
@@ -996,7 +1136,7 @@ static void *run(void *targ)
 				tmpptr->lineage = pptr->lineage; /* Lineage is copied in offspring */
 				tmpptr->generation = pptr->generation + 1;
 
-				for(i=0;i<POND_DEPTH_SYSWORDS;++i)
+				for(i=0;i<PONDDEPTH_SYSWORDS;++i)
 					tmpptr->genome[i] = outputBuf[i];
 			}
 #ifdef USE_PTHREADS_COUNT
@@ -1009,20 +1149,20 @@ static void *run(void *targ)
 		((uint8_t *)screen->pixels)[x + (y * sdlPitch)] = getColor(pptr);
 		if (x) {
 			((uint8_t *)screen->pixels)[(x-1) + (y * sdlPitch)] = getColor(&pond[x-1][y]);
-			if (x < (POND_SIZE_X-1))
+			if (x < (np_option.pond_xdim-1))
 				((uint8_t *)screen->pixels)[(x+1) + (y * sdlPitch)] = getColor(&pond[x+1][y]);
 			else ((uint8_t *)screen->pixels)[y * sdlPitch] = getColor(&pond[0][y]);
 		} else {
-			((uint8_t *)screen->pixels)[(POND_SIZE_X-1) + (y * sdlPitch)] = getColor(&pond[POND_SIZE_X-1][y]);
+			((uint8_t *)screen->pixels)[(np_option.pond_xdim-1) + (y * sdlPitch)] = getColor(&pond[np_option.pond_xdim-1][y]);
 			((uint8_t *)screen->pixels)[1 + (y * sdlPitch)] = getColor(&pond[1][y]);
 		}
 		if (y) {
 			((uint8_t *)screen->pixels)[x + ((y-1) * sdlPitch)] = getColor(&pond[x][y-1]);
-			if (y < (POND_SIZE_Y-1))
+			if (y < (np_option.pond_ydim-1))
 				((uint8_t *)screen->pixels)[x + ((y+1) * sdlPitch)] = getColor(&pond[x][y+1]);
 			else ((uint8_t *)screen->pixels)[x] = getColor(&pond[x][0]);
 		} else {
-			((uint8_t *)screen->pixels)[x + ((POND_SIZE_Y-1) * sdlPitch)] = getColor(&pond[x][POND_SIZE_Y-1]);
+			((uint8_t *)screen->pixels)[x + ((np_option.pond_ydim-1) * sdlPitch)] = getColor(&pond[x][np_option.pond_ydim-1]);
 			((uint8_t *)screen->pixels)[x + sdlPitch] = getColor(&pond[x][1]);
 		}
 #endif /* USE_SDL */
@@ -1043,10 +1183,11 @@ int main(int argc,char **argv)
 
     init_options();
     parse_options( &argc, &argv );
+    allocate_pond();
 
 	/* Seed and init the random number generator */
-    if( np_option.use_seed ){
-        srand( np_option.seed );
+    if( np_option.seed ){
+        srand( (unsigned int)(np_option.seed) );
         prngState[0] = (uint64_t)rand();
         prngState[1] = (uint64_t)rand();
     }else{
@@ -1066,7 +1207,7 @@ int main(int argc,char **argv)
 		exit(1);
 	}
 	atexit(SDL_Quit);
-	window = SDL_CreateWindow("nanopond", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, POND_SIZE_X, POND_SIZE_Y, 0);
+	window = SDL_CreateWindow("nanopond", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, np_option.pond_xdim, np_option.pond_ydim, 0);
 	if (!window) {
 		fprintf(stderr, "*** Unable to create SDL window: %s ***\n", SDL_GetError());
 		exit(1);
@@ -1076,7 +1217,7 @@ int main(int argc,char **argv)
 		fprintf(stderr, "*** Unable to get SDL window surface: %s ***\n", SDL_GetError());
 		exit(1);
 	}
-	screen = SDL_CreateRGBSurface(0, POND_SIZE_X, POND_SIZE_Y, 8, 0, 0, 0, 0);
+	screen = SDL_CreateRGBSurface(0, np_option.pond_xdim, np_option.pond_ydim, 8, 0, 0, 0, 0);
 	if (!screen) {
 		fprintf(stderr, "*** Unable to create SDL window surface: %s ***\n", SDL_GetError());
 		exit(1);
@@ -1101,14 +1242,14 @@ int main(int argc,char **argv)
 
 	/* Clear the pond and initialize all genomes
 	 * to 0xffff... */
-	for(x=0;x<POND_SIZE_X;++x) {
-		for(y=0;y<POND_SIZE_Y;++y) {
+	for(x=0;x<np_option.pond_xdim;++x) {
+		for(y=0;y<np_option.pond_ydim;++y) {
 			pond[x][y].ID = 0;
 			pond[x][y].parentID = 0;
 			pond[x][y].lineage = 0;
 			pond[x][y].generation = 0;
 			pond[x][y].energy = 0;
-			for(i=0;i<POND_DEPTH_SYSWORDS;++i)
+			for(i=0;i<PONDDEPTH_SYSWORDS;++i)
 				pond[x][y].genome[i] = ~((uintptr_t)0);
 #ifdef USE_PTHREADS_COUNT
 			pthread_mutex_init(&(pond[x][y].lock),0);
@@ -1131,6 +1272,6 @@ int main(int argc,char **argv)
 	SDL_FreeSurface(screen);
 	SDL_DestroyWindow(window);
 #endif /* USE_SDL */
-
+    deallocate_pond();
 	return 0;
 }
