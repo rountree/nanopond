@@ -16,9 +16,11 @@ SDL_LIB=`$(SDL_CONFIG) --libs`
 # Only useful in np-t and np-xt targets
 NUM_THREADS=32
 
-CFLAGS=-Ofast -Wall -Wextra -Werror -g -std=c2x
+CFLAGS=-Ofast -Wall -Wextra -Werror -g -std=c2x -o $@
 CDEBUG_FLAGS=-Og -Wall -Wextra -Werror -g \
 			 -std=c2x -fsanitize=address -fsanitize=leak
+
+NP_SRC=cli.c nanopond.c
 
 # Use this to build everything.
 all: np-all
@@ -27,23 +29,23 @@ clean: np-clean sdl-clean
 # nanopond targets:  x=Use SDL for GUI, t=multithreaded using pthreads
 np-all: np np-x np-t np-xt np-dbg
 
-np: nanopond.c
-	gcc $(CFLAGS) -o np nanopond.c
+np: $(NP_SRC)
+	gcc $(CFLAGS) $(NP_SRC)
 
-np-dbg: nanopond.c
-	gcc $(CDEBUG_FLAGS) -o np-dbg nanopond.c
+np-dbg: $(NP_SRC)
+	gcc $(CDEBUG_FLAGS) $(NP_SRC)
 
-np-x: sdl-install nanopond.c
+np-x: sdl-install $(NP_SRC)
 	gcc -DUSE_SDL $(SDL_CFLAGS) \
-		$(CFLAGS) -o np-x nanopond.c $(SDL_LIB)
+		$(CFLAGS) $(NP_SRC) $(SDL_LIB)
 
-np-t: nanopond.c
+np-t: $(NP_SRC)
 	gcc -DUSE_PTHREAD_COUNT=$(NUM_THREADS) \
-		$(CFLAGS) -o np-t nanopond.c -lpthread
+		$(CFLAGS) $(NP_SRC) -lpthread
 
-np-xt: sdl-install nanopond.c
+np-xt: sdl-install $(NP_SRC)
 	gcc -DUSE_SDL -DUSE_PTHREAD_COUNT=$(NUM_THREADS) $(SDL_CFLAGS) \
-		$(CFLAGS) -o np-xt nanopond.c $(SDL_LIB) -lpthread
+		$(CFLAGS) $(NP_SRC) $(SDL_LIB) -lpthread
 
 np-clean:
 	rm -rf *.o np np-t np-x np-xt np-dbg np.13.test *.dSYM
