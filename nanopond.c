@@ -252,14 +252,15 @@
 /* Define this to use SDL. To use SDL, you must have SDL headers
  * available and you must link with the SDL library when you compile. */
 /* Comment this out to compile without SDL visualization support. */
-#define USE_SDL 1
+//#define USE_SDL 1
 
 /* Define this to use threads, and how many threads to create */
-#define USE_PTHREADS_COUNT 4
+//#define USE_PTHREADS_COUNT 4
 
 /* ----------------------------------------------------------------------- */
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -351,9 +352,9 @@ static volatile uint64_t cellIdCounter = 0;
 
 /* Currently selected color scheme */
 enum { KINSHIP,LINEAGE,MAX_COLOR_SCHEME } colorScheme = KINSHIP;
-static const char *colorSchemeName[2] = { "KINSHIP", "LINEAGE" };
 
 #ifdef USE_SDL
+static const char *colorSchemeName[2] = { "KINSHIP", "LINEAGE" };
 static SDL_Window *window;
 static SDL_Surface *winsurf;
 static SDL_Surface *screen;
@@ -446,6 +447,7 @@ static void doReport(const uint64_t clock)
  * @param file Destination
  * @param cell Source
  */
+#ifdef USE_SDL
 static void dumpCell(FILE *file, struct Cell *cell)
 {
 	uintptr_t wordPtr,shiftPtr,inst,stopCount,i;
@@ -477,6 +479,7 @@ static void dumpCell(FILE *file, struct Cell *cell)
 	}
 	fprintf(file,"\n");
 }
+#endif //USE_SDL
 
 static inline struct Cell *getNeighbor(const uintptr_t x,const uintptr_t y,const uintptr_t dir)
 {
@@ -502,6 +505,7 @@ static inline int accessAllowed(struct Cell *const c2,const uintptr_t c1guess,in
 	return sense ? (((getRandom() & 0xf) >= BITS_IN_FOURBIT_WORD[(c2->genome[0] & 0xf) ^ (c1guess & 0xf)])||(!c2->parentID)) : (((getRandom() & 0xf) <= BITS_IN_FOURBIT_WORD[(c2->genome[0] & 0xf) ^ (c1guess & 0xf)])||(!c2->parentID));
 }
 
+#ifdef USE_SDL
 static inline uint8_t getColor(struct Cell *c)
 {
 	uintptr_t i,j,word,sum,opcode,skipnext;
@@ -557,6 +561,7 @@ static inline uint8_t getColor(struct Cell *c)
 	}
 	return 0; /* Cells with no energy are black */
 }
+#endif //USE_SDL
 
 volatile int exitNow = 0;
 
