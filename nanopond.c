@@ -259,6 +259,8 @@
 
 /* ----------------------------------------------------------------------- */
 
+#ifdef DISABLE_INCLUDE
+#else
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -277,6 +279,7 @@
 #include <SDL2/SDL.h>
 #endif /* _MSC_VER */
 #endif /* USE_SDL */
+#endif  //DISABLE_INCLUDE
 
 volatile uint64_t prngState[2];
 static inline uintptr_t getRandom()
