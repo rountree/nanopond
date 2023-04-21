@@ -130,6 +130,67 @@ sed --in-place --expression "s/ _Noreturn / RRR__NORETURN /g"		x$1	# _Noreturn
 sed --in-place --expression "s/ _Static_assert / RRR__SASSERT /g"	x$1	# _Static_assert
 sed --in-place --expression "s/ _Thread_local / RRR__THRDLCL /g"	x$1	# _Thread_local
 
+# Library-defined symbols
+sed --in-place --expression "s/ uintptr_t / SSS_UINTPTR_T /g"       x$1 # uintptr_t
+sed --in-place --expression "s/ uint64_t / SSS_UINTSIXFOUR_T /g"    x$1 # uint64_t
+sed --in-place --expression "s/ uint8_t / SSS_UINTEIGHT_T /g"       x$1 # uint64_t
+sed --in-place --expression "s/ fprintf / SSS_FPRINTF /g"           x$1 # fprintf
+sed --in-place --expression "s/ printf / SSS_PRINTF /g"             x$1 # printf
+sed --in-place --expression "s/ fflush / SSS_FFLUSH /g"             x$1 # fflush
+sed --in-place --expression "s/ stdout / SSS_STDOUT /g"             x$1 # stdout
+sed --in-place --expression "s/ stderr / SSS_STDERR /g"             x$1 # stderr
+sed --in-place --expression "s/ PRIu64 / SSS_PRIUSIXFOUR /g"        x$1 # PRIu64
+sed --in-place --expression "s/ srand / SSS_SRAND /g"               x$1 # srand
+sed --in-place --expression "s/ time / SSS_TIME /g"                 x$1 # time
+sed --in-place --expression "s/ rand / SSS_RAND /g"                 x$1 # rand
+sed --in-place --expression "s/ NULL / SSS_NULL /g"                 x$1 # NULL
+sed --in-place --expression "s/ main / SSS_MAIN /g"                 x$1 # main
+
+# Constants
+sed --in-place --expression "s/ 0xffffffff / CCC_EIGHT_FS /g"       x$1 # 0xffffffff
+sed --in-place --expression "s/ 200000 / CCC_TWOHUNDREDK /g"        x$1 # 200000
+sed --in-place --expression "s/ 5000 / CCC_FIVEK /g"                x$1 # 5000
+sed --in-place --expression "s/ 1024 / CCC_TENTWENTYFOUR /g"        x$1 # 1024
+sed --in-place --expression "s/ 1000 / CCC_ONEK /g"                 x$1 # 1000
+sed --in-place --expression "s/ 0xff / CCC_FF /g"                   x$1 # 0xff
+sed --in-place --expression "s/ 0x80 / CCC_HEXEIGHTY /g"            x$1 # 0x80
+sed --in-place --expression "s/ 800 / CCC_EIGHTHUNDRED /g"          x$1 # 800
+sed --in-place --expression "s/ 600 / CCC_SIXHUNDRED /g"            x$1 # 600
+sed --in-place --expression "s/ 100 / CCC_ONEHUNDRED /g"            x$1 # 100
+sed --in-place --expression "s/ c2 / CCC_CTWO /g"                   x$1 # c2
+sed --in-place --expression "s/ 4f / CCC_FOURF /g"                  x$1 # 4f
+sed --in-place --expression "s/ 26 / CCC_TWOSIX /g"                 x$1 # 26
+sed --in-place --expression "s/ 23 / CCC_TWOTHREE /g"               x$1 # 23
+sed --in-place --expression "s/ 17 / CCC_TWOTHREE /g"               x$1 # 17
+sed --in-place --expression "s/ 16 / CCC_TWOTHREE /g"               x$1 # 16
+sed --in-place --expression "s/ 0xf / CCC_FIFTEENH /g"              x$1 # 0xf
+sed --in-place --expression "s/ 0xe / CCC_FOURTEENH /g"             x$1 # 0xe
+sed --in-place --expression "s/ 0xd / CCC_THIRTEENH /g"             x$1 # 0xd
+sed --in-place --expression "s/ 0xc / CCC_TWELVEH /g"               x$1 # 0xc
+sed --in-place --expression "s/ 0xb / CCC_ELEVENH /g"               x$1 # 0xb
+sed --in-place --expression "s/ 0xa / CCC_TENH /g"                  x$1 # 0xa
+sed --in-place --expression "s/ 0x9 / CCC_NINEH /g"                 x$1 # 0x9
+sed --in-place --expression "s/ 0x8 / CCC_EIGHTH /g"                x$1 # 0x8
+sed --in-place --expression "s/ 0x7 / CCC_SEVENH /g"                x$1 # 0x7
+sed --in-place --expression "s/ 0x6 / CCC_SIXH /g"                  x$1 # 0x6
+sed --in-place --expression "s/ 0x5 / CCC_FIVEH /g"                 x$1 # 0x5
+sed --in-place --expression "s/ 0x4 / CCC_FOURH /g"                 x$1 # 0x4
+sed --in-place --expression "s/ 0x3 / CCC_THREEH /g"                x$1 # 0x3
+sed --in-place --expression "s/ 0x2 / CCC_TWOH /g"                  x$1 # 0x2
+sed --in-place --expression "s/ 0x1 / CCC_ONEH /g"                  x$1 # 0x1
+sed --in-place --expression "s/ 0x0 / CCC_ZEROH /g"                 x$1 # 0x0
+sed --in-place --expression "s/ 9 / CCC_DNINE /g"                   x$1 # 9
+sed --in-place --expression "s/ 8 / CCC_DEIGHT /g"                  x$1 # 8
+sed --in-place --expression "s/ 7 / CCC_DSEVEN /g"                  x$1 # 7
+sed --in-place --expression "s/ 6 / CCC_DSIX /g"                    x$1 # 6
+sed --in-place --expression "s/ 5 / CCC_DFIVE /g"                   x$1 # 5
+sed --in-place --expression "s/ 4 / CCC_DFOUR /g"                   x$1 # 4
+sed --in-place --expression "s/ 3 / CCC_DTHREE /g"                  x$1 # 3
+sed --in-place --expression "s/ 2 / CCC_DTWO /g"                    x$1 # 2
+sed --in-place --expression "s/ 1 / CCC_DONE /g"                    x$1 # 1
+sed --in-place --expression "s/ 0 / CCC_DZERO /g"                   x$1 # 0
+
+
 
 # Smush
 cat x$1 			\
@@ -140,6 +201,8 @@ cat x$1 			\
 | tr " " "\n"			\
 | grep -v QQQ			\
 | grep -v RRR			\
+| grep -v SSS			\
+| grep -v CCC			\
 | sort				\
 | uniq				\
 | awk '{print length, $0 }'	\
@@ -147,15 +210,16 @@ cat x$1 			\
 | cut -d " " -f 2		\
 > targets
 
+sed --in-place --expression "/^$/d" targets
+
 echo "Targets completed"
 
 declare -a myarray=(`seq -f "%03g" 0 1000`)
 counter=1
 while read -r line
 do
-	#echo "Hi! " ${counter} " " ${myarray[${counter}]}
-	echo ${line}
-	sed --in-place --expression "s/${line}/VVV/g" x$1
-	#sed --in-place --expression 's/'"${line}"'/VVV_'"${myarray[${counter}]}"'/g' x$1
+    echo "Hi, Dan!" ${line} ${counter} ${myarray[${counter}]}
+	sed --in-place --expression "s/${line}/ VVV_${myarray[${counter}]} /g" x$1
 	let counter=counter+1
 done < ./targets
+
