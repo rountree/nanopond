@@ -4,9 +4,13 @@ warn: nanopond.c Makefile
 
 obfuscate:
 	${cc} -std=c2x -Wall -Wextra -DDISABLE_INCLUDE -E nanopond.c > obfuscated.c
+	# Replaces C operators, keywords, library symbols and user symbols, and user strings with tokens.
 	./obfuscate.sh obfuscated.c
+	# Restores C operators, keywords, library symbols and user strings.
 	./unobfuscate.sh obfuscated.c
+	# Restores header files.
 	sed --in-place --expression "1s/^/#include <stdint.h>\n#include <inttypes.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n/" obfuscated.c
+	# Add a bit of formatting.
 	clang-format -i obfuscated.c
 
 

@@ -6,6 +6,14 @@ sed --in-place --expression "/^#/d"					$1
 # Remove empty lines
 sed --in-place --expression "/^$/d"					$1
 
+# Strings are hard
+sed --in-place --expression 's/"%"/ ZZZ_STR1 /g'			$1	# "%"
+sed --in-place --expression 's/",%"/ ZZZ_STR2 /g'			$1	# ",%"
+sed --in-place --expression 's/",%.4f"/ ZZZ_STR3 /g'			$1	# ",%.4f"
+sed --in-place --expression 's/",%.4f\\n"/ ZZZ_STR4 /g'			$1	# ",%.4f\n"
+sed --in-place --expression 's/"\[EVENT\] Viable replicators have g.*"/ ZZZ_STR5 /g' $1
+sed --in-place --expression 's/"\[EVENT\] Viable replicators have a.*"/ ZZZ_STR6 /g' $1
+
 # Ensure leading and trailing spaces
 sed --in-place --expression "s/^/ /"					$1	# Leading space
 sed --in-place --expression "s/$/ /"					$1	# trailing space
@@ -132,7 +140,7 @@ sed --in-place --expression "s/ _Noreturn / RRR__NORETURN /g"		$1	# _Noreturn
 sed --in-place --expression "s/ _Static_assert / RRR__SASSERT /g"	$1	# _Static_assert
 sed --in-place --expression "s/ _Thread_local / RRR__THRDLCL /g"	$1	# _Thread_local
 
-	# Library-defined symbols
+# Library-defined symbols
 sed --in-place --expression "s/ uintptr_t / SSS_UINTPTR_T /g"       	$1 	# uintptr_t
 sed --in-place --expression "s/ uint64_t / SSS_UINTSIXFOUR_T /g"    	$1 	# uint64_t
 sed --in-place --expression "s/ uint8_t / SSS_UINTEIGHT_T /g"       	$1 	# uint64_t
@@ -148,7 +156,7 @@ sed --in-place --expression "s/ rand / SSS_RAND /g"                 	$1 	# rand
 sed --in-place --expression "s/ NULL / SSS_NULL /g"                 	$1 	# NULL
 sed --in-place --expression "s/ main / SSS_MAIN /g"                 	$1 	# main
 
-	# Constants
+# Constants
 sed --in-place --expression "s/ 0xffffffff / CCC_EIGHT_FS /g"       	$1 	# 0xffffffff
 sed --in-place --expression "s/ 200000 / CCC_TWOHUNDREDK /g"        	$1 	# 200000
 sed --in-place --expression "s/ 5000 / CCC_FIVEK /g"                	$1 	# 5000
@@ -195,7 +203,7 @@ sed --in-place --expression "s/ 0 / CCC_DZERO /g"                   	$1 	# 0
 
 
 # Smush
-cat $1 			\
+cat $1 				\
 | tr "[:blank:]" " "		\
 | tr -s " " 			\
 | sed --expression "s/ $//"	\
@@ -205,6 +213,7 @@ cat $1 			\
 | grep -v RRR			\
 | grep -v SSS			\
 | grep -v CCC			\
+| grep -v ZZZ			\
 | sort				\
 | uniq				\
 | awk '{print length, $0 }'	\

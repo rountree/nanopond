@@ -1,5 +1,17 @@
 #!/bin/bash
 
+echo "restoring strings"
+
+# User strings
+sed --in-place --expression 's/ZZZ_STR1/"%"/g' $1
+sed --in-place --expression 's/ZZZ_STR2/",%"/g' $1
+sed --in-place --expression 's/ZZZ_STR3/",%.4f"/g' $1
+sed --in-place --expression 's/ZZZ_STR4/",%.4f\\n"/g' $1
+sed --in-place --expression 's/ZZZ_STR5/"[EVENT] Viable replicators have gone extinct. Please reserve a moment of silence.\\n"/g' $1
+sed --in-place --expression 's/ZZZ_STR6/"[EVENT] Viable replicators have appeared!\\n"/g' $1
+
+echo "string restoration complete"
+
 # Three-character punctuation
 sed --in-place --expression "s/QQQ_THREEDOTS/ \.\.\. /g"		$1	# ...
 sed --in-place --expression "s/QQQ_SHIFTL_EQUALS/ <<= /g"		$1	# <<=
