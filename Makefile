@@ -35,5 +35,11 @@ no: nanopond.c Makefile obfuscate.sh unobfuscate.sh
 	${CC} -std=c2x -Wall -Wextra -O3 -c no.c
 	${CC} -std=c2x -Wall -Wextra -O3 -s -o no no.o
 
+test: np no
+	md5sum np no
+	./np 2>&1 | head -n 100 > np.out
+	./no 2>&1 | head -n 100 > no.out
+	diff -u np.out no.out
+
 clean:
 	rm -rf *.o np no targets no.c
