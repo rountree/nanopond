@@ -1,7 +1,9 @@
-.DS_Store
-@*
-Thumbs.db
-*.o
-nanopond
 .*.swp
+*.o
+no
+np
+no.c
+targets
+np.out
+no.out
 
