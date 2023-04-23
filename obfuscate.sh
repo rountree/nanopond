@@ -227,11 +227,11 @@ cat $1 				\
 
 echo "Targets completed"
 
-declare -a myarray=(`seq -f "%03g" 0 1000`)
+declare -a myarray=(`seq -f "%02g" 0 100`)
 counter=1
 while read -r line
 do
-	sed --in-place --expression "s/${line}/ VVV_${myarray[${counter}]} /g" $1
+	sed --in-place --expression "s/${line}/ V${myarray[${counter}]} /g" $1
 	let counter=counter+1
 done < ./targets
 
