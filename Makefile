@@ -1,25 +1,39 @@
-cc=clang-13
-warn: nanopond.c Makefile
-	${cc} -std=c2x -Wall -Wextra -c nanopond.c
+# Known to work with
+# 	GNU sed 4.7
+# 	GNU make 4.3
+# 	clang-format 11.0.1-2
+# 	clang 13.0.1-6~deb11u1
 
-obfuscate:
-	${cc} -std=c2x -Wall -Wextra -DDISABLE_INCLUDE -E nanopond.c > obfuscated.c
+CC=clang-13
+CFLAGS=-std=c2x -Wall -Wextra -O3
+LFLAGS=-s
+
+all: np no
+
+np: nanopond.c Makefile
+	# np -- nanopond
+	# Stock deterministic nanopond, no graphics or multithreading.
+	#
+	${CC} ${CFLAGS} -DDETERMINISTIC -c nanopond.c
+	${CC} ${CFLAGS} ${LFLAGS} -s -o np nanopond.o
+
+no: nanopond.c Makefile obfuscate.sh unobfuscate.sh
+	# no -- nanopond obfuscated
+	# Stock deterministic obfuscated nanopond, no graphics or multithreading.
+	#
+	# Run the code through the preprocessor minus the header files.
+	${CC} ${CFLAGS} -DDETERMINISTIC -DDISABLE_INCLUDE -E nanopond.c > no.c
 	# Replaces C operators, keywords, library symbols and user symbols, and user strings with tokens.
-	./obfuscate.sh obfuscated.c
+	./obfuscate.sh no.c
 	# Restores C operators, keywords, library symbols and user strings.
-	./unobfuscate.sh obfuscated.c
+	./unobfuscate.sh no.c
 	# Restores header files.
-	sed --in-place --expression "1s/^/#include <stdint.h>\n#include <inttypes.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n/" obfuscated.c
+	sed --in-place --expression "1s/^/#include <stdint.h>\n#include <inttypes.h>\n#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n#include <time.h>\n/" no.c
 	# Add a bit of formatting.
-	clang-format -i obfuscated.c
-
-
-test:
-	cp test.orig test.c
-	./obfuscate.sh test.c
-
-original:
-	cc -I/usr/local/include -L/usr/local/lib -Ofast -o nanopond nanopond.c -lSDL2
+	clang-format -i no.c
+	# Let's build the obfuscated version
+	${CC} -std=c2x -Wall -Wextra -O3 -c no.c
+	${CC} -std=c2x -Wall -Wextra -O3 -s -o no no.o
 
 clean:
-	rm -rf *.o nanopond *.dSYM nanopond.o
+	rm -rf *.o np no targets no.c

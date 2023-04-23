@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Special cases
+sed --in-place --expression "s/ID/JJ/g"					$1
+
 # Remove preprocesor artifcats
 sed --in-place --expression "/^#/d"					$1
 
@@ -167,28 +170,29 @@ sed --in-place --expression "s/ 0x80 / CCC_HEXEIGHTY /g"            	$1 	# 0x80
 sed --in-place --expression "s/ 800 / CCC_EIGHTHUNDRED /g"          	$1 	# 800
 sed --in-place --expression "s/ 600 / CCC_SIXHUNDRED /g"            	$1 	# 600
 sed --in-place --expression "s/ 100 / CCC_ONEHUNDRED /g"            	$1 	# 100
-sed --in-place --expression "s/ c2 / CCC_CTWO /g"                   	$1 	# c2
-sed --in-place --expression "s/ 4f / CCC_FOURF /g"                  	$1 	# 4f
-sed --in-place --expression "s/ 26 / CCC_TWOSIX /g"                 	$1 	# 26
-sed --in-place --expression "s/ 23 / CCC_TWOTHREE /g"               	$1 	# 23
-sed --in-place --expression "s/ 17 / CCC_TWOTHREE /g"               	$1 	# 17
-sed --in-place --expression "s/ 16 / CCC_TWOTHREE /g"               	$1 	# 16
-sed --in-place --expression "s/ 0xf / CCC_FIFTEENH /g"              	$1 	# 0xf
-sed --in-place --expression "s/ 0xe / CCC_FOURTEENH /g"             	$1 	# 0xe
-sed --in-place --expression "s/ 0xd / CCC_THIRTEENH /g"             	$1 	# 0xd
-sed --in-place --expression "s/ 0xc / CCC_TWELVEH /g"               	$1 	# 0xc
-sed --in-place --expression "s/ 0xb / CCC_ELEVENH /g"               	$1 	# 0xb
-sed --in-place --expression "s/ 0xa / CCC_TENH /g"                  	$1 	# 0xa
-sed --in-place --expression "s/ 0x9 / CCC_NINEH /g"                 	$1 	# 0x9
-sed --in-place --expression "s/ 0x8 / CCC_EIGHTH /g"                	$1 	# 0x8
-sed --in-place --expression "s/ 0x7 / CCC_SEVENH /g"                	$1 	# 0x7
-sed --in-place --expression "s/ 0x6 / CCC_SIXH /g"                  	$1 	# 0x6
-sed --in-place --expression "s/ 0x5 / CCC_FIVEH /g"                 	$1 	# 0x5
-sed --in-place --expression "s/ 0x4 / CCC_FOURH /g"                 	$1 	# 0x4
-sed --in-place --expression "s/ 0x3 / CCC_THREEH /g"                	$1 	# 0x3
-sed --in-place --expression "s/ 0x2 / CCC_TWOH /g"                  	$1 	# 0x2
-sed --in-place --expression "s/ 0x1 / CCC_ONEH /g"                  	$1 	# 0x1
-sed --in-place --expression "s/ 0x0 / CCC_ZEROH /g"                 	$1 	# 0x0
+sed --in-place --expression "s/ c2 / CCC_HCTWO /g"                   	$1 	# c2
+sed --in-place --expression "s/ 4f / CCC_HFOURF /g"                  	$1 	# 4f
+sed --in-place --expression "s/ 26 / CCC_DTWOSIX /g"                 	$1 	# 26
+sed --in-place --expression "s/ 23 / CCC_DTWOTHREE /g"               	$1 	# 23
+sed --in-place --expression "s/ 17 / CCC_DSEVENTEEN /g"               	$1 	# 17
+sed --in-place --expression "s/ 16 / CCC_DSIXTEEN /g"               	$1 	# 16
+sed --in-place --expression "s/ 13 / CCC_DTHIRTEEN /g"               	$1 	# 13
+sed --in-place --expression "s/ 0xf / CCC_HFIFTEEN /g"              	$1 	# 0xf
+sed --in-place --expression "s/ 0xe / CCC_HFOURTEEN /g"             	$1 	# 0xe
+sed --in-place --expression "s/ 0xd / CCC_HTHIRTEEN /g"             	$1 	# 0xd
+sed --in-place --expression "s/ 0xc / CCC_HTWELVE /g"               	$1 	# 0xc
+sed --in-place --expression "s/ 0xb / CCC_HELEVEN /g"               	$1 	# 0xb
+sed --in-place --expression "s/ 0xa / CCC_HTEN /g"                  	$1 	# 0xa
+sed --in-place --expression "s/ 0x9 / CCC_HNINE /g"                 	$1 	# 0x9
+sed --in-place --expression "s/ 0x8 / CCC_HEIGHT /g"                	$1 	# 0x8
+sed --in-place --expression "s/ 0x7 / CCC_HSEVEN /g"                	$1 	# 0x7
+sed --in-place --expression "s/ 0x6 / CCC_HSIX /g"                  	$1 	# 0x6
+sed --in-place --expression "s/ 0x5 / CCC_HFIVE /g"                 	$1 	# 0x5
+sed --in-place --expression "s/ 0x4 / CCC_HFOUR /g"                 	$1 	# 0x4
+sed --in-place --expression "s/ 0x3 / CCC_HTHREE /g"                	$1 	# 0x3
+sed --in-place --expression "s/ 0x2 / CCC_HTWO /g"                  	$1 	# 0x2
+sed --in-place --expression "s/ 0x1 / CCC_HONE /g"                  	$1 	# 0x1
+sed --in-place --expression "s/ 0x0 / CCC_HZERO /g"                 	$1 	# 0x0
 sed --in-place --expression "s/ 9 / CCC_DNINE /g"                   	$1 	# 9
 sed --in-place --expression "s/ 8 / CCC_DEIGHT /g"                  	$1 	# 8
 sed --in-place --expression "s/ 7 / CCC_DSEVEN /g"                  	$1 	# 7

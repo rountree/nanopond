@@ -950,8 +950,13 @@ int main(int,char**)
 	uintptr_t i,x,y;
 
 	/* Seed and init the random number generator */
+#ifdef DETERMINISTIC
+	prngState[0] = 13;
+	srand(13);
+#else
 	prngState[0] = (uint64_t)time(NULL);
 	srand(time(NULL));
+#endif //DETERMINISTIC
 	prngState[1] = (uint64_t)rand();
 
 	/* Reset per-report stat counters */
